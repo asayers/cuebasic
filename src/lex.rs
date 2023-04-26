@@ -1,8 +1,56 @@
 use logos::{Lexer, Logos};
 
-#[derive(Logos, Debug)]
+#[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t]+")]
 pub enum Token<'a> {
+    // Punctuation
+    #[token(":")]
+    Colon,
+    #[token("{")]
+    OpenBrace,
+    #[token("}")]
+    CloseBrace,
+    #[token("[")]
+    OpenBracket,
+    #[token("]")]
+    CloseBracket,
+    #[token(",")]
+    Comma,
+    #[token(".")]
+    Period,
+
+    // Literals
+    #[token("null")]
+    Null,
+    #[token("true", |_| true)]
+    #[token("false", |_| false)]
+    Bool(bool),
+    #[regex(r"0|([1-9]([0-9_])*)", from_decimal)]
+    #[regex(r"[0-9]([0-9_])*(\.[0-9]([0-9_])*)?[KMGTP]i?", from_si)]
+    #[regex(r"\.[0-9][0-9]([0-9_])*[KMGTP]i?", from_si)]
+    #[regex(r"0b[01][01_]*", from_binary)]
+    #[regex(r"0o[0-7][0-7_]*", from_octal)]
+    #[regex(r"0[xX][0-9a-fA-F][0-9a-fA-F_]*", from_hex)]
+    Int(i64),
+    #[regex(r"[0-9][0-9_]*\.([0-9][0-9_]*)?([eE][+-][0-9][0-9_]*)?", from_float)]
+    #[regex(r"[0-9][0-9_]*[eE][+-][0-9][0-9_]*", from_float)]
+    #[regex(r"\.[0-9][0-9_]*([eE][+-][0-9][0-9_]*)?", from_float)]
+    Float(f64),
+    // TODO: Multiline strings
+    // TODO: Escape sequences
+    #[regex("\"[^\"]*\"", from_string)]
+    #[regex("'[^']*'", from_string)]
+    String(&'a str),
+
+    // TODO: Use the unicode Letter and Digit classes
+    #[regex(r"(_?#)?([a-zA-Z_$])([a-zA-Z_$0-9])*")]
+    Ident(&'a str),
+
+    #[token("//")]
+    Comment,
+    #[regex(r"[\n\r]+")]
+    Newline,
+    /*
     // Keywords
     #[token("package")]
     Package,
@@ -16,14 +64,16 @@ pub enum Token<'a> {
     If,
     #[token("let")]
     Let,
-    #[regex(r"__(#|_#)?([a-zA-Z]|_)([a-zA-Z]|_|[0-9])*")]
+    #[regex(r"__(#|_#)?([a-zA-Z_])([a-zA-Z_0-9])*")]
     Keyword(&'a str),
+    #[token("@([a-zA-Z_])([a-zA-Z_0-9])*")]
+    Attribute,
 
     // Operators
     #[token("+")]
     Plus,
     #[token("-")]
-    Minus,
+    Minus, // Could also be unary negation
     #[token("*")]
     Asterisk, // Could be unary "default" or binary "times"
     #[token("/")]
@@ -45,17 +95,15 @@ pub enum Token<'a> {
     #[token("!~")]
     TestNotSimilar,
     #[token("<")]
-    TestLT,
+    TestLT, // Could be a binary test, or a unary range constructor
     #[token(">")]
-    TestGT,
+    TestGT, // Could be a binary test, or a unary range constructor
     #[token("<=")]
-    TestLE,
+    TestLE, // Could be a binary test, or a unary range constructor
     #[token(">=")]
-    TestGE,
+    TestGE, // Could be a binary test, or a unary range constructor
     #[token("=")]
     Equals,
-    #[token(":")]
-    Colon,
     #[token("?")]
     Optional,
     #[token("!")]
@@ -64,54 +112,12 @@ pub enum Token<'a> {
     OpenParens,
     #[token(")")]
     CloseParens,
-    #[token("{")]
-    OpenBrace,
-    #[token("}")]
-    CloseBrace,
-    #[token("[")]
-    OpenBracket,
-    #[token("]")]
     CloseBracket,
     #[token("_|_")]
     Bottom,
     #[token("...")]
     Elipsis,
-    #[token(",")]
-    Comma,
-    #[token(".")]
-    Period,
-
-    // Literals
-    #[token("null")]
-    Null,
-    #[token("true", |_| true)]
-    #[token("false", |_| false)]
-    Bool(bool),
-    #[regex(r"0|([1-9]([0-9_])*)", from_decimal)]
-    #[regex(r"[0-9]([0-9_])*(\.[0-9]([0-9_])*)?[KMGTP]i?", from_si)]
-    #[regex(r"\.[0-9][0-9]([0-9_])*[KMGTP]i?", from_si)]
-    #[regex(r"0b[01][01_]*", from_binary)]
-    #[regex(r"0o[0-7][0-7_]*", from_octal)]
-    #[regex(r"0[xX][0-9a-fA-F][0-9a-fA-F_]*", from_hex)]
-    Int(u64),
-    #[regex(r"[0-9][0-9_]*\.([0-9][0-9_]*)?([eE][+-][0-9][0-9_]*)?", from_float)]
-    #[regex(r"[0-9][0-9_]*[eE][+-][0-9][0-9_]*", from_float)]
-    #[regex(r"\.[0-9][0-9_]*([eE][+-][0-9][0-9_]*)?", from_float)]
-    Float(f64),
-    // TODO: Multiline strings
-    // TODO: Escape sequences
-    #[regex("\"[^\"]*\"", from_string)]
-    #[regex("'[^']*'", from_string)]
-    String(&'a str),
-
-    // TODO: Use the unicode Letter and Digit classes
-    // TODO: Allow '$' in identifiers
-    #[regex(r"(_?#)?([a-zA-Z_$])([a-zA-Z_$0-9])*")]
-    Ident(&'a str),
-
-    #[token(r"//.*[\n\r]+")] // Comments act like newlines
-    #[regex(r"[\n\r]+")]
-    Newline,
+    */
 }
 
 fn from_decimal<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<u64> {
