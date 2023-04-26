@@ -6,8 +6,13 @@ pub use crate::lex::Token;
 pub use crate::merge::merge;
 pub use crate::parse::parse;
 use itertools::Itertools;
+use logos::Logos;
 use serde_json::Value;
 use std::fmt;
+
+pub fn from_str(s: &str) -> anyhow::Result<Value> {
+    merge(parse(Token::lexer(s))?)
+}
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Path(Vec<PathSegment>);
@@ -40,5 +45,17 @@ impl fmt::Display for PathTarget {
             PathTarget::Value(x) => write!(f, "{x}"),
             PathTarget::Ref(x) => write!(f, "->{x}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn empty() {
+        assert_eq!(from_str("'':''").unwrap(), json!({"": ""}));
+        assert_eq!(from_str("''\n:2\n").unwrap(), json!({"": 2}));
     }
 }
