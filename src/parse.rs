@@ -5,7 +5,7 @@ use serde_json::Value;
 use tracing::*;
 
 pub fn parse<'a>(lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathTarget)>> {
-    let mut lexer = lexer.map(|token| token.map_err(|()| anyhow!("Lexer error")));
+    let mut lexer = lexer.map(|token| token.map_err(|e| anyhow!("Lexer error: {e}")));
 
     let mut ret = vec![];
     let mut scope: Vec<Vec<PathSegment>> = vec![];
