@@ -1,23 +1,16 @@
 use crate::{Path, PathSegment, PathTarget, Token};
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use logos::Lexer;
 use serde_json::Value;
-use tracing::*;
 
-pub fn parse<'a>(lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathTarget)>> {
-    let mut lexer = lexer.map(|token| token.map_err(|e| anyhow!("Lexer error: {e}")));
-
+pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathTarget)>> {
     let mut ret = vec![];
     let mut scope: Vec<Vec<PathSegment>> = vec![];
     let mut path = vec![];
     let mut prev = None;
     let mut reference = vec![];
+    let mut seen_newline = false;
 
-    macro_rules! next_token {
-        ($pat: pat) => {
-            let Some($pat) = lexer.next().transpose()? else { bail!("Unexpected token") };
-        };
-    }
     macro_rules! store_token {
         ($token: expr) => {{
             match $token {
@@ -70,19 +63,22 @@ pub fn parse<'a>(lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathT
         }};
     }
 
-    while let Some(token) = lexer.next().transpose()? {
-        match token {
-            Token::Package => {
-                // TODO: Outside the preamble, this should be converted into an identifier
-                next_token!(Token::Ident(x));
-                next_token!(Token::Newline);
-                debug!("package {x}");
+    while let Some(token) = lexer
+        .next()
+        .transpose()
+        .map_err(|e| anyhow!("Lexer error: {e}"))?
+    {
+        if seen_newline && !matches!(token, Token::Colon | Token::Newline) {
+            if let Some(token) = prev.take() {
+                store_token!(token)
             }
-            Token::Import => {
-                // TODO: Outside the preamble, this should be converted into an identifier
-                next_token!(Token::Ident(x));
-                next_token!(Token::Newline);
-                debug!("import {x}");
+        }
+        seen_newline = false;
+        match token {
+            Token::Comment => {
+                let rem = lexer.remainder();
+                let n = rem.find('\n').unwrap_or_else(|| rem.len());
+                lexer.bump(n); // leave the newline
             }
             Token::Ident(_)
             | Token::Null
@@ -96,17 +92,13 @@ pub fn parse<'a>(lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathT
             Token::Colon => match prev.take() {
                 Some(Token::Ident(x)) => path.push(PathSegment::Object(x.to_string())),
                 Some(Token::String(x)) => path.push(PathSegment::Object(x.to_string())),
-                _ => panic!(),
+                x => panic!("{x:?}"),
             },
             Token::Period => match prev.take() {
                 Some(Token::String(x)) => reference.push(PathSegment::Object(x.to_string())),
                 _ => panic!(),
             },
-            Token::Newline => {
-                if let Some(token) = prev.take() {
-                    store_token!(token)
-                }
-            }
+            Token::Newline => seen_newline = true,
             Token::Comma => {
                 if let Some(token) = prev.take() {
                     store_token!(token)
@@ -132,8 +124,11 @@ pub fn parse<'a>(lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathT
                 }
                 scope.pop();
             }
-            _ => error!("Unhandled token: {token:?}"),
         }
+    }
+
+    if let Some(token) = prev.take() {
+        store_token!(token)
     }
 
     Ok(ret)
