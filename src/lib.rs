@@ -30,6 +30,8 @@ pub enum PathTarget {
     Int(BigInt),
     Float(Scientific),
     String(String),
+    EmptyArray,
+    EmptyObject,
     Ref(Path),
 }
 #[derive(Clone, PartialEq, Eq, Debug)]

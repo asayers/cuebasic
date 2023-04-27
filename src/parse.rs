@@ -1,7 +1,7 @@
 use crate::{Path, PathSegment, PathTarget, Token};
-use anyhow::anyhow;
+use anyhow::{anyhow, ensure};
 use logos::Lexer;
-use serde_json::Value;
+use tracing::*;
 
 pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, PathTarget)>> {
     let mut ret = vec![];
@@ -10,6 +10,7 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
     let mut prev = None;
     let mut reference = vec![];
     let mut seen_newline = false;
+    let mut scope_is_empty = true;
 
     macro_rules! store_token {
         ($token: expr) => {{
@@ -17,15 +18,15 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                 Token::Ident(x) => store_ref!(PathSegment::Object(x.to_string())),
                 Token::String(x) => {
                     if reference.is_empty() {
-                        store_value!(Value::from(x));
+                        store_value!(PathTarget::String(x.to_string()));
                     } else {
                         store_ref!(PathSegment::Object(x.to_string()));
                     }
                 }
-                Token::Null => store_value!(Value::Null),
-                Token::Bool(x) => store_value!(Value::from(x)),
-                Token::Int(x) => store_value!(Value::from(x)),
-                Token::Float(x) => store_value!(Value::from(x)),
+                Token::Null => store_value!(PathTarget::Null),
+                Token::Bool(x) => store_value!(PathTarget::Bool(x)),
+                Token::Int(x) => store_value!(PathTarget::Int(x)),
+                Token::Float(x) => store_value!(PathTarget::Float(x)),
                 x => panic!("{x:?}"),
             }
         }};
@@ -41,9 +42,10 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                         .chain(path.drain(..))
                         .collect(),
                 ),
-                PathTarget::Value($value),
+                $value,
             ));
             path.clear();
+            scope_is_empty = false;
         }};
     }
     macro_rules! store_ref {
@@ -60,6 +62,7 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                 PathTarget::Ref(Path(reference.drain(..).chain([$value]).collect())),
             ));
             reference.clear();
+            scope_is_empty = false;
         }};
     }
 
@@ -68,6 +71,7 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
         .transpose()
         .map_err(|e| anyhow!("Lexer error: {e}"))?
     {
+        debug!("{token:?}");
         if seen_newline && !matches!(token, Token::Colon | Token::Newline) {
             if let Some(token) = prev.take() {
                 store_token!(token)
@@ -77,7 +81,7 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
         match token {
             Token::Comment => {
                 let rem = lexer.remainder();
-                let n = rem.find('\n').unwrap_or_else(|| rem.len());
+                let n = rem.find('\n').unwrap_or(rem.len());
                 lexer.bump(n); // leave the newline
             }
             Token::Ident(_)
@@ -107,8 +111,17 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                     *x += 1;
                 }
             }
-            Token::OpenBrace => scope.push(path.drain(..).collect::<Vec<_>>()),
+            Token::OpenBrace => {
+                scope.push(path.drain(..).collect::<Vec<_>>());
+                scope_is_empty = true;
+            }
             Token::CloseBrace => {
+                if let Some(token) = prev.take() {
+                    store_token!(token)
+                }
+                if scope_is_empty {
+                    store_value!(PathTarget::EmptyObject);
+                }
                 scope.pop();
             }
             Token::OpenBracket => {
@@ -117,10 +130,16 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                         .chain([PathSegment::Array(0)])
                         .collect::<Vec<_>>(),
                 );
+                scope_is_empty = true;
             }
             Token::CloseBracket => {
                 if let Some(token) = prev.take() {
                     store_token!(token)
+                }
+                if scope_is_empty {
+                    let x = scope.last_mut().and_then(|x| x.pop());
+                    ensure!(x == Some(PathSegment::Array(0)));
+                    store_value!(PathTarget::EmptyArray);
                 }
                 scope.pop();
             }
@@ -128,7 +147,11 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
     }
 
     if let Some(token) = prev.take() {
-        store_token!(token)
+        store_token!(token);
+        if scope_is_empty {
+            store_value!(PathTarget::EmptyObject);
+            assert!(!scope_is_empty);
+        }
     }
 
     Ok(ret)
