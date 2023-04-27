@@ -3,14 +3,14 @@ name = "cuebasic"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 anyhow = "1.0.70"
 clap = { version = "4.2.4", features = ["derive"] }
 itertools = "0.10.5"
 logos = "0.13.0"
+num-bigint = "0.4.3"
+num-traits = "0.2.15"
+scientific = "0.2.0"
 serde_json = "1.0.96"
 tracing = "0.1.38"
 tracing-subscriber = "0.3.17"
-winnow = "0.4.1"

@@ -1,5 +1,8 @@
 use logos::{Lexer, Logos};
-use std::num::{ParseFloatError, ParseIntError};
+use num_bigint::{BigInt, ParseBigIntError};
+use num_traits::{FromPrimitive, Num};
+use scientific::Scientific;
+use std::num::ParseFloatError;
 
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t]+")]
@@ -27,20 +30,22 @@ pub enum Token<'a> {
     #[token("true", |_| true)]
     #[token("false", |_| false)]
     Bool(bool),
-    #[regex(r"-?0|([1-9]([0-9_])*)", from_decimal)]
+    #[regex(r"-?0", from_decimal)]
+    #[regex(r"-?[1-9]([0-9_])*", from_decimal)]
     #[regex(r"-?[0-9]([0-9_])*(\.[0-9]([0-9_])*)?[KMGTP]i?", from_si)]
     #[regex(r"-?\.[0-9][0-9]([0-9_])*[KMGTP]i?", from_si)]
     #[regex(r"0b[01][01_]*", from_binary)]
     #[regex(r"0o[0-7][0-7_]*", from_octal)]
     #[regex(r"0[xX][0-9a-fA-F][0-9a-fA-F_]*", from_hex)]
-    Int(i64),
-    #[regex(r"-?[0-9][0-9_]*\.([0-9][0-9_]*)?([eE][+-][0-9][0-9_]*)?", from_float)]
-    #[regex(r"-?[0-9][0-9_]*[eE][+-][0-9][0-9_]*", from_float)]
-    #[regex(r"-?\.[0-9][0-9_]*([eE][+-][0-9][0-9_]*)?", from_float)]
-    Float(f64),
+    Int(BigInt),
+    #[regex(r"-?[0-9][0-9_]*\.([0-9][0-9_]*)?([eE][+-]?[0-9][0-9_]*)?", from_float)]
+    #[regex(r"-?[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*", from_float)]
+    #[regex(r"-?\.[0-9][0-9_]*([eE][+-]?[0-9][0-9_]*)?", from_float)]
+    Float(Scientific),
     // TODO: Multiline strings
     // TODO: Escape sequences
-    #[regex("\"[^\"]*\"", from_string)]
+    // #[regex(r#""[^"]*""#, from_string)]
+    #[regex("\"(?:[^\"\\\\]|\\\\.)*\"", from_string)]
     #[regex("'[^']*'", from_string)]
     String(&'a str),
 
@@ -122,13 +127,13 @@ pub enum Token<'a> {
     */
 }
 
-fn from_decimal<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<i64, String> {
+fn from_decimal<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<BigInt, String> {
     lexer
         .slice()
         .parse()
-        .map_err(|x: ParseIntError| x.to_string())
+        .map_err(|x: ParseBigIntError| x.to_string())
 }
-fn from_si<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<i64, String> {
+fn from_si<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<BigInt, String> {
     let xs = lexer.slice();
     let (head, tail) = xs.split_at(xs.len() - if xs.ends_with('i') { 2 } else { 1 });
     let man: f64 = head.parse().map_err(|x: ParseFloatError| x.to_string())?;
@@ -145,22 +150,26 @@ fn from_si<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<i64, String> {
         "Pi" => 2_f64.powi(50),
         x => return Err(format!("Bad SI suffix: {x}")),
     };
-    Ok((man * exp) as i64)
+    let x = man * exp;
+    BigInt::from_f64(x).ok_or_else(|| format!("Not an integer: {x}"))
 }
-fn from_binary<'a>(_: &mut Lexer<'a, Token<'a>>) -> Result<i64, String> {
-    todo!()
+fn from_binary<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<BigInt, String> {
+    let digits = &lexer.slice()[2..];
+    BigInt::from_str_radix(digits, 2).map_err(|x: ParseBigIntError| x.to_string())
 }
-fn from_octal<'a>(_: &mut Lexer<'a, Token<'a>>) -> Result<i64, String> {
-    todo!()
+fn from_octal<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<BigInt, String> {
+    let digits = &lexer.slice()[2..];
+    BigInt::from_str_radix(digits, 8).map_err(|x: ParseBigIntError| x.to_string())
 }
-fn from_hex<'a>(_: &mut Lexer<'a, Token<'a>>) -> Result<i64, String> {
-    todo!()
+fn from_hex<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<BigInt, String> {
+    let digits = &lexer.slice()[2..];
+    BigInt::from_str_radix(digits, 16).map_err(|x: ParseBigIntError| x.to_string())
 }
-fn from_float<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<f64, String> {
+fn from_float<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<Scientific, String> {
     lexer
         .slice()
         .parse()
-        .map_err(|x: ParseFloatError| x.to_string())
+        .map_err(|x: scientific::ConversionError| format!("{x:?}"))
 }
 fn from_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> &'a str {
     let xs = lexer.slice();
