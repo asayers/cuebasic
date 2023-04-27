@@ -9,6 +9,8 @@ struct Opts {
     tokens: bool,
     #[clap(long)]
     unmerged: bool,
+    #[clap(long)]
+    last_write_wins: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -27,7 +29,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
     if !opts.unmerged && !opts.tokens {
-        let value = merge(tree)?;
+        let value = merge(tree, !opts.last_write_wins)?;
         println!("{value}");
     }
     Ok(())

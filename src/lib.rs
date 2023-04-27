@@ -14,7 +14,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 pub fn from_str(s: &str) -> anyhow::Result<Value> {
-    merge(parse(Token::lexer(s))?)
+    merge(parse(Token::lexer(s))?, false)
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
