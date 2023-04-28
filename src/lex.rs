@@ -21,8 +21,6 @@ pub enum Token<'a> {
     CloseBracket,
     #[token(",")]
     Comma,
-    #[token(".")]
-    Period,
 
     // Literals
     #[token("null")]
@@ -58,6 +56,9 @@ pub enum Token<'a> {
     #[regex(r"[\n\r]+")]
     Newline,
     /*
+    #[token(".")]
+    Period,
+
     // Keywords
     #[token("package")]
     Package,

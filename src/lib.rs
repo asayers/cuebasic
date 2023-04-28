@@ -5,7 +5,6 @@ mod parse;
 pub use crate::lex::Token;
 pub use crate::merge::merge;
 pub use crate::parse::parse;
-use anyhow::bail;
 use itertools::Itertools;
 use logos::Logos;
 use num_bigint::BigInt;
@@ -32,7 +31,6 @@ pub enum PathTarget {
     String(String),
     EmptyArray,
     EmptyObject,
-    Ref(Path),
 }
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Value {
@@ -68,7 +66,6 @@ impl fmt::Display for PathTarget {
             PathTarget::String(x) => write!(f, "\"{x}\""),
             PathTarget::EmptyArray => write!(f, "[]"),
             PathTarget::EmptyObject => write!(f, "{{}}"),
-            PathTarget::Ref(x) => write!(f, "->{x}"),
         }
     }
 }
@@ -108,7 +105,6 @@ impl TryFrom<PathTarget> for Value {
             PathTarget::String(x) => Value::String(x),
             PathTarget::EmptyArray => Value::Array(vec![]),
             PathTarget::EmptyObject => Value::Object(BTreeMap::new()),
-            PathTarget::Ref(x) => bail!("Unresolved reference: {x}"),
         })
     }
 }

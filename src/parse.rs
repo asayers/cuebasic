@@ -8,20 +8,14 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
     let mut scope: Vec<Vec<PathSegment>> = vec![];
     let mut path = vec![];
     let mut prev = None;
-    let mut reference = vec![];
     let mut seen_newline = false;
     let mut scope_is_empty = true;
 
     macro_rules! store_token {
         ($token: expr) => {{
             match $token {
-                Token::Ident(x) => store_ref!(PathSegment::Object(x.to_string())),
                 Token::String(x) => {
-                    if reference.is_empty() {
-                        store_value!(PathTarget::String(x.to_string()));
-                    } else {
-                        store_ref!(PathSegment::Object(x.to_string()));
-                    }
+                    store_value!(PathTarget::String(x.to_string()))
                 }
                 Token::Null => store_value!(PathTarget::Null),
                 Token::Bool(x) => store_value!(PathTarget::Bool(x)),
@@ -45,23 +39,6 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                 $value,
             ));
             path.clear();
-            scope_is_empty = false;
-        }};
-    }
-    macro_rules! store_ref {
-        ($value: expr) => {{
-            ret.push((
-                Path(
-                    scope
-                        .iter()
-                        .cloned()
-                        .flatten()
-                        .chain(path.drain(..))
-                        .collect(),
-                ),
-                PathTarget::Ref(Path(reference.drain(..).chain([$value]).collect())),
-            ));
-            reference.clear();
             scope_is_empty = false;
         }};
     }
@@ -97,10 +74,6 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                 Some(Token::Ident(x)) => path.push(PathSegment::Object(x.to_string())),
                 Some(Token::String(x)) => path.push(PathSegment::Object(x.to_string())),
                 x => panic!("{x:?}"),
-            },
-            Token::Period => match prev.take() {
-                Some(Token::String(x)) => reference.push(PathSegment::Object(x.to_string())),
-                _ => panic!(),
             },
             Token::Newline => seen_newline = true,
             Token::Comma => {
