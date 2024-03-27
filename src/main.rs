@@ -1,21 +1,20 @@
+use bpaf::{Bpaf, Parser};
 use cuebasic::*;
 use logos::Logos;
 use std::path::PathBuf;
 
-#[derive(clap::Parser)]
+#[derive(Bpaf)]
 struct Opts {
-    file: PathBuf,
-    #[clap(long)]
     tokens: bool,
-    #[clap(long)]
     unmerged: bool,
-    #[clap(long)]
     last_write_wins: bool,
+    #[bpaf(positional("PATH"))]
+    file: PathBuf,
 }
 
 fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
-    let opts = <Opts as clap::Parser>::parse();
+    let opts = opts().to_options().run();
     let file = std::fs::read_to_string(opts.file)?;
     if opts.tokens {
         for token in Token::lexer(&file) {
