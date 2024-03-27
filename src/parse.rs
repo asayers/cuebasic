@@ -56,11 +56,6 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
         }
         seen_newline = false;
         match token {
-            Token::Comment => {
-                let rem = lexer.remainder();
-                let n = rem.find('\n').unwrap_or(rem.len());
-                lexer.bump(n); // leave the newline
-            }
             Token::Ident(_)
             | Token::Null
             | Token::Bool(_)
