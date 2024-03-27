@@ -51,8 +51,8 @@ pub enum Token<'a> {
     #[regex(r"(_?#)?([a-zA-Z_$])([a-zA-Z_$0-9])*")]
     Ident(&'a str),
 
-    #[regex(r"[\n\r]")]
-    #[regex(r"//[^\n\r]*[\n\r]")] // Comments are treated as newlines
+    #[regex(r"[\n\r\f]")]
+    #[regex(r"//[^\n\r\f]*[\n\r\f]")] // Comments are treated as newlines
     Newline,
     /*
     #[token(".")]
