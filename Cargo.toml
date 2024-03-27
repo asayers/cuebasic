@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.70"
 bpaf = { version = "0.9.11", features = ["derive"] }
-itertools = "0.10.5"
+itertools = "0.12.1"
 logos = "0.14.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
-scientific = "0.2.0"
+scientific = "0.5.2"
 serde_json = "1.0.96"
 tracing = "0.1.38"
 tracing-subscriber = "0.3.17"
