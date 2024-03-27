@@ -46,7 +46,7 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
     while let Some(token) = lexer
         .next()
         .transpose()
-        .map_err(|e| anyhow!("Lexer error: {e}"))?
+        .map_err(|e| anyhow!("Lexer error: {e:?}\n{}", lexer.slice()))?
     {
         debug!("{token:?}");
         if seen_newline && !matches!(token, Token::Colon | Token::Newline) {
