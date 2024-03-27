@@ -5,9 +5,13 @@ use std::path::PathBuf;
 
 #[derive(Bpaf)]
 struct Opts {
+    /// Lex the file and dump the tokens
     tokens: bool,
+    /// Parse the file and dump the path->value mapping
     unmerged: bool,
+    /// Don't error on duplicate fields with conflicting values
     last_write_wins: bool,
+    /// The source file.  Reads from stdin if not specified
     #[bpaf(positional("PATH"))]
     file: PathBuf,
 }
