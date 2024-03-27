@@ -80,7 +80,7 @@ pub fn parse<'a>(mut lexer: Lexer<'a, Token<'a>>) -> anyhow::Result<Vec<(Path, P
                 }
             }
             Token::OpenBrace => {
-                scope.push(path.drain(..).collect::<Vec<_>>());
+                scope.push(std::mem::take(&mut path));
                 scope_is_empty = true;
             }
             Token::CloseBrace => {
