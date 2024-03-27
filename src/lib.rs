@@ -45,14 +45,14 @@ pub enum Value {
 
 impl fmt::Display for Path {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.iter().format("/"))
+        write!(f, "{}", self.0.iter().format(": "))
     }
 }
 impl fmt::Display for PathSegment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             PathSegment::Object(x) => write!(f, "{x}"),
-            PathSegment::Array(x) => write!(f, "{x}"),
+            PathSegment::Array(x) => write!(f, "[{x}]"),
         }
     }
 }
