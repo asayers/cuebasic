@@ -1,8 +1,7 @@
 <h1 align="center">CUE-basic</h1>
-<hr>
 
 CUE-basic makes JSON easier to write.
-It's an extension of JSON, so evert valid JSON document is also a valid CUE-basic document.
+It's an extension of JSON, so every valid JSON document is also a valid CUE-basic document.
 The data model is exactly the same as JSON, so a CUE-basic document can be converted into JSON.
 The syntax is more flexible than JSON, which makes it more pleasant to write.
 
@@ -158,3 +157,14 @@ documents are also valid CUE programs (and evaluate to the exact same JSON),
 
 Basically, all the smart stuff that makes CUE powerful is gone, leaving a format
 which is _almost_ as simple and boring as plain ol' JSON - but not quite.
+
+# Implementation status
+
+Well, it works!  And it's pretty fast.  The error messages are atrocious, however.
+
+The "superset of JSON" claim is checked by fuzzing, so you can be fairly sure
+that plain JSON will roundtrip through `cuebasic` unmodified.
+
+The "subset of CUE" claim has **not** been systematically tested.  This should
+be the next step: generating random CUE-basic documents and checking that
+they're evaluated to the exact same JSON by both `cue` and `cuebasic`.
