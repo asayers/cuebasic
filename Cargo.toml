@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1.0.70"
 clap = { version = "4.2.4", features = ["derive"] }
 itertools = "0.10.5"
-logos = "0.13.0"
+logos = "0.14.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
 scientific = "0.2.0"
