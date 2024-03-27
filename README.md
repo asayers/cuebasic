@@ -38,8 +38,8 @@ dependencies: {
 
 // We have fancy numbers:
 build: {
-    theads: 1_400          // You can break them up with underscores
-    timeout_seconds: 21.6K // and use SI suffixes
+    short_timeout: 1_400   // You can break them up with underscores
+    long_timeout: 21.6K    // and use SI suffixes
     max_memory: 6Gi        // ...in either base-10 or base-2
     checksum: 0x25f93cd2   // hexadecimal (octal and binary are supported too)
     precision: 1e-3        // and scientific notation, of course (this is
@@ -72,10 +72,10 @@ Running this through cuebasic produces the following:
 {
   "build": {
     "checksum": 637091026,
+    "long_timeout": 21600,
     "max_memory": 6442450944,
-    "precision": 0.001,
-    "theads": 1400,
-    "timeout_seconds": 21600
+    "precision": 1e-3,
+    "short_timeout": 1400
   },
   "dependencies": {
     "anyhow": "1.0.70",
