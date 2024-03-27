@@ -47,8 +47,7 @@ pub enum Token<'a> {
     #[regex("'[^']*'", from_string)]
     String(&'a str),
 
-    // TODO: Use the unicode Letter and Digit classes
-    #[regex(r"(_?#)?([a-zA-Z_$])([a-zA-Z_$0-9])*")]
+    #[regex(r"(_?#)?([\p{Letter}_$])([\w$])*")]
     Ident(&'a str),
 
     #[regex(r"[\n\r\f]")]
