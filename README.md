@@ -1,14 +1,22 @@
 <h1 align="center">CUE-basic</h1>
+<p align="center">JSON &lt; CUE-basic &lt; CUE</p>
 
 CUE-basic makes JSON easier to write.
-It's an extension of JSON, so every valid JSON document is also a valid CUE-basic document.
-The data model is exactly the same as JSON, so a CUE-basic document can be converted into JSON.
-The syntax is more flexible than JSON, which makes it more pleasant to write.
+
+* The syntax is an extension of JSON; this means that every valid JSON document
+  is also a valid CUE-basic document.
+* The data model is exactly the same as JSON; this means that documents can be
+  converted back-and-forth between JSON and CUE-basic.
+* The syntax is more flexible than JSON though, which makes it more pleasant for
+  humans to read and write.
 
 The syntax is copied from the [CUE language].
-CUE-basic is a subset of CUE, which means that every valid CUE-basic document is also a valid CUE program.
-Whereas CUE is a fully-fledged programming language, CUE-basic is just a data format.
-This means that, compared to CUE, it's simple to define, and simple to process.
+
+* CUE-basic is a subset of CUE; this means that every valid CUE-basic document
+  is also a valid CUE program (and should evaluate to the same JSON).
+* Whereas CUE is a fully-fledged programming language, CUE-basic is just a data format.
+  This means that, compared to CUE, it's simple to define, and simple to process.
+* See [what was removed](#differences-from-cue).
 
 [CUE language]: https://cuelang.org/
 
@@ -165,6 +173,6 @@ Well, it works!  And it's pretty fast.  The error messages are atrocious, howeve
 The "superset of JSON" claim is checked by fuzzing, so you can be fairly sure
 that plain JSON will roundtrip through `cuebasic` unmodified.
 
-The "subset of CUE" claim has **not** been systematically tested.  This should
-be the next step: generating random CUE-basic documents and checking that
+The "subset of CUE" claim has **not** yet been systematically tested.  This
+should be the next step: generating random CUE-basic documents and checking that
 they're evaluated to the exact same JSON by both `cue` and `cuebasic`.
