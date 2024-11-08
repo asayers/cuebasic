@@ -109,6 +109,7 @@ impl TryFrom<PathTarget> for Value {
     }
 }
 
+#[cfg(feature = "serde_json")]
 impl PartialEq<serde_json::Value> for Value {
     fn eq(&self, other: &serde_json::Value) -> bool {
         // let sanitize = |s: &str| s.replace(['\\', '\t', '\r', '\n'], "");
